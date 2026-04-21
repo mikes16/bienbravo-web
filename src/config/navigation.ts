@@ -4,6 +4,7 @@ export interface NavLink {
 }
 
 export const navLinks: NavLink[] = [
+  { label: "Sucursales", href: "#sucursales" },
   { label: "Servicios", href: "#servicios" },
   { label: "Barberos", href: "#barberos" },
   { label: "Nosotros", href: "#nosotros" },
@@ -18,6 +19,7 @@ export const footerColumns: FooterColumn[] = [
   {
     title: "Explorar",
     links: [
+      { label: "Sucursales", href: "#sucursales" },
       { label: "Servicios", href: "#servicios" },
       { label: "Barberos", href: "#barberos" },
       { label: "Nosotros", href: "#nosotros" },

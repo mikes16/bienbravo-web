@@ -11,6 +11,7 @@ import { gsap } from "@/lib/gsap-plugins";
 
 const FRAME_COUNT = 34;
 const FRAME_PATH = "/images/chair-seq/frame-";
+const PRIORITY_FRAMES = [1, FRAME_COUNT];
 
 function frameSrc(i: number): string {
   return `${FRAME_PATH}${String(i).padStart(3, "0")}.webp`;
@@ -31,12 +32,13 @@ export const ChairSequence = forwardRef<ChairSequenceHandle, Props>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const framesRef = useRef<HTMLImageElement[]>([]);
     const readyRef = useRef(false);
+    const firstFrameRef = useRef(false);
 
     const drawFrame = useCallback((index: number) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       const img = framesRef.current[index];
-      if (!canvas || !ctx || !img) return;
+      if (!canvas || !ctx || !img || !img.complete) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
@@ -44,32 +46,51 @@ export const ChairSequence = forwardRef<ChairSequenceHandle, Props>(
 
     useEffect(() => {
       let mounted = true;
-      const imgs: HTMLImageElement[] = [];
-      let loaded = 0;
+      const imgs: HTMLImageElement[] = new Array(FRAME_COUNT);
 
-      for (let i = 1; i <= FRAME_COUNT; i++) {
-        const img = new Image();
-        img.src = frameSrc(i);
-        img.onload = () => {
-          loaded++;
-          if (loaded === FRAME_COUNT && mounted) {
-            framesRef.current = imgs;
-            const canvas = canvasRef.current;
-            if (canvas) {
-              canvas.width = imgs[0].naturalWidth;
-              canvas.height = imgs[0].naturalHeight;
-            }
-            readyRef.current = true;
-            onLoaded?.();
-          }
-        };
-        imgs.push(img);
+      function initCanvas(img: HTMLImageElement) {
+        const canvas = canvasRef.current;
+        if (canvas && canvas.width === 0) {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+        }
       }
+
+      function loadFrame(i: number): Promise<void> {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.decoding = "async";
+          img.src = frameSrc(i);
+          imgs[i - 1] = img;
+          img.onload = () => {
+            if (!mounted) return resolve();
+            initCanvas(img);
+            if (!firstFrameRef.current && i === 1) {
+              firstFrameRef.current = true;
+              framesRef.current = imgs;
+              readyRef.current = true;
+              drawFrame(0);
+              onLoaded?.();
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
+        });
+      }
+
+      (async () => {
+        await Promise.all(PRIORITY_FRAMES.map(loadFrame));
+        if (!mounted) return;
+        for (let i = 2; i < FRAME_COUNT; i++) {
+          if (!mounted) return;
+          await loadFrame(i);
+        }
+      })();
 
       return () => {
         mounted = false;
       };
-    }, [onLoaded]);
+    }, [onLoaded, drawFrame]);
 
     useImperativeHandle(ref, () => ({
       play(duration = 1.0) {

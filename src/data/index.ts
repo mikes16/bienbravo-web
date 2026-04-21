@@ -1,2 +1,3 @@
-export { getServices, getFeaturedServices } from "./getServices";
-export { getBarbers, getBarberById } from "./getBarbers";
+export { getLocationMenus, getMenuByGroup, getAllServices } from "./getServices";
+export { getBarbers, getBarberById, getBarbersByLocation, getPremiumBarber } from "./getBarbers";
+export { getLocations, getLocationBySlug } from "./getLocations";

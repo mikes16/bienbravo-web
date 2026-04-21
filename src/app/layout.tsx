@@ -56,6 +56,14 @@ export default function RootLayout({
         <link rel="icon" href="/favicon/favicon-16x16.png" type="image/png" sizes="16x16" />
         <link rel="apple-touch-icon" href="/favicon/apple-touch-icon-180x180.png" />
         <link rel="manifest" href="/favicon/site.webmanifest" />
+        <link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://use.typekit.net" />
+        <link
+          rel="preload"
+          as="style"
+          href="https://use.typekit.net/fvh7ohr.css"
+        />
         <link rel="stylesheet" href="https://use.typekit.net/fvh7ohr.css" />
       </head>
       <body className="min-h-full">

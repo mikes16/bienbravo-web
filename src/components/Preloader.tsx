@@ -4,16 +4,14 @@ import { useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap-plugins";
 import { trackEvent } from "@/lib/analytics";
 
-/**
- * Marks the preloader as done globally so late-mounting components
- * can check whether they missed the event.
- */
+const MIN_DISPLAY_MS = 300;
+const MAX_DISPLAY_MS = 1400;
+
 function markPreloaderDone() {
   (window as Window & { __preloaderDone?: boolean }).__preloaderDone = true;
   window.dispatchEvent(new CustomEvent("preloader:done"));
 }
 
-/** Returns true if the preloader has already completed. */
 export function isPreloaderDone(): boolean {
   return typeof window !== "undefined" &&
     !!(window as Window & { __preloaderDone?: boolean }).__preloaderDone;
@@ -26,35 +24,62 @@ export function Preloader() {
   const startTime = useRef(Date.now());
 
   useGSAP(() => {
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setHidden(true);
-        markPreloaderDone();
-        trackEvent({
-          event: "preloader_complete",
-          load_time_ms: Date.now() - startTime.current,
-        });
-      },
-    });
+    const start = startTime.current;
 
-    tl.from(logoRef.current, {
-      opacity: 0,
-      scale: 0.8,
-      duration: 0.6,
-      ease: "power3.out",
-    })
-      .to(logoRef.current, {
-        opacity: 0,
-        scale: 1.1,
-        duration: 0.4,
-        ease: "power2.in",
-        delay: 0.8,
-      })
-      .to(containerRef.current, {
-        yPercent: -100,
-        duration: 0.7,
-        ease: "power4.inOut",
+    const fadeIn = gsap.fromTo(
+      logoRef.current,
+      { opacity: 0, scale: 0.9 },
+      { opacity: 1, scale: 1, duration: 0.35, ease: "power3.out" },
+    );
+
+    function finish() {
+      const elapsed = Date.now() - start;
+      const wait = Math.max(0, MIN_DISPLAY_MS - elapsed);
+      gsap.delayedCall(wait / 1000, () => {
+        gsap
+          .timeline({
+            onComplete: () => {
+              setHidden(true);
+              markPreloaderDone();
+              trackEvent({
+                event: "preloader_complete",
+                load_time_ms: Date.now() - start,
+              });
+            },
+          })
+          .to(logoRef.current, {
+            opacity: 0,
+            scale: 1.1,
+            duration: 0.3,
+            ease: "power2.in",
+          })
+          .to(
+            containerRef.current,
+            { yPercent: -100, duration: 0.55, ease: "power4.inOut" },
+            "-=0.1",
+          );
       });
+    }
+
+    let triggered = false;
+    function triggerOnce() {
+      if (triggered) return;
+      triggered = true;
+      finish();
+    }
+
+    if (document.readyState === "complete") {
+      fadeIn.eventCallback("onComplete", triggerOnce);
+    } else {
+      window.addEventListener("load", triggerOnce, { once: true });
+    }
+
+    const maxTimer = window.setTimeout(triggerOnce, MAX_DISPLAY_MS);
+
+    return () => {
+      window.clearTimeout(maxTimer);
+      window.removeEventListener("load", triggerOnce);
+    };
   });
 
   if (hidden) return null;

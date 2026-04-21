@@ -8,8 +8,12 @@ export const whatsappConfig = {
   number: "528112345678",
   defaultMessage:
     "Hola, me gustaría agendar una cita en Bien Bravo.",
+  locationMessage: (locationName: string) =>
+    `Hola, me gustaría agendar una cita en Bien Bravo ${locationName}.`,
   barberMessage: (barberName: string) =>
     `Hola, me gustaría agendar una cita con ${barberName} en Bien Bravo.`,
+  premiumMessage:
+    "Hola, me gustaría agendar una cita con Javi Cruz.",
 } as const;
 
 export const socialLinks: SocialLink[] = [

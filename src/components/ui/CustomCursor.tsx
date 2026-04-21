@@ -20,13 +20,22 @@ export function CustomCursor() {
     const moveRingX = gsap.quickTo(ring, "left", { duration: 0.35, ease: "power3.out" });
     const moveRingY = gsap.quickTo(ring, "top", { duration: 0.35, ease: "power3.out" });
 
+    let pendingX = 0;
+    let pendingY = 0;
+    let rafId = 0;
+
+    function flush() {
+      rafId = 0;
+      moveDotX(pendingX);
+      moveDotY(pendingY);
+      moveRingX(pendingX);
+      moveRingY(pendingY);
+    }
+
     function onMove(e: MouseEvent) {
-      const x = e.clientX;
-      const y = e.clientY;
-      moveDotX(x);
-      moveDotY(y);
-      moveRingX(x);
-      moveRingY(y);
+      pendingX = e.clientX;
+      pendingY = e.clientY;
+      if (!rafId) rafId = requestAnimationFrame(flush);
     }
 
     function onEnterInteractive() {
@@ -48,6 +57,7 @@ export function CustomCursor() {
     });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       document.removeEventListener("mousemove", onMove);
       interactives.forEach((el) => {
         el.removeEventListener("mouseenter", onEnterInteractive);
