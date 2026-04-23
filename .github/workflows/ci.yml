@@ -1,0 +1,28 @@
+name: Web CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    env:
+      API_GRAPHQL_URL: http://localhost:3001/graphql
+      API_SERVICE_TOKEN: ci-dummy-token
+      NEXT_PUBLIC_API_GRAPHQL_URL: http://localhost:3001/graphql
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Verify GraphQL codegen is up to date
+        run: |
+          npm run codegen
+          git diff --exit-code schema.graphql src/lib/api/generated/
+      - run: npm run lint
+      - run: npm run build
