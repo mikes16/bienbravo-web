@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { serverQuery } from "@/lib/api/server";
-import { PRODUCTS_QUERY, type StoreProduct } from "@/lib/api/queries";
+import { PRODUCTS_QUERY } from "@/lib/api/queries";
+import { ProductStatus, type StoreProductsQuery } from "@/lib/api/generated/graphql";
 import { formatMXN } from "@/lib/cart/format";
 
 export const revalidate = 60;
@@ -11,13 +12,14 @@ export const metadata = {
   description: "Productos para el ritual de barbería. Pomadas, cuidado y accesorios.",
 };
 
+type StoreProduct = StoreProductsQuery["products"][number];
+
 async function getProducts(): Promise<StoreProduct[]> {
-  const data = await serverQuery<{ products: StoreProduct[] }>(
-    PRODUCTS_QUERY,
-    undefined,
-    { revalidate: 60, tags: ["products"] },
-  );
-  return data.products.filter((p) => p.isActive && p.status === "ACTIVE");
+  const data = await serverQuery(PRODUCTS_QUERY, undefined, {
+    revalidate: 60,
+    tags: ["products"],
+  });
+  return data.products.filter((p) => p.isActive && p.status === ProductStatus.Active);
 }
 
 function minPriceCents(p: StoreProduct): number | null {

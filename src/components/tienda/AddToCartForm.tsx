@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cartStore } from "@/lib/cart/store";
 import { formatMXN } from "@/lib/cart/format";
-import type { StoreProductVariant } from "@/lib/api/queries";
+import type { StoreProductsQuery } from "@/lib/api/generated/graphql";
+
+type StoreProductVariant = StoreProductsQuery["products"][number]["variants"][number];
 
 type Props = {
   product: { id: string; name: string; handle: string | null; imageUrl: string | null };

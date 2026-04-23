@@ -7,7 +7,9 @@ import Link from "next/link";
 import { getStripe } from "@/lib/stripe/client";
 import { useCart, cartStore, cartTotalCents } from "@/lib/cart/store";
 import { formatMXN } from "@/lib/cart/format";
-import type { StoreLocation } from "@/lib/api/queries";
+import type { StoreLocationsQuery } from "@/lib/api/generated/graphql";
+
+type StoreLocation = StoreLocationsQuery["locations"][number];
 
 type Props = { locations: StoreLocation[] };
 
