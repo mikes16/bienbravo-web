@@ -117,6 +117,42 @@ GSAP ScrollTrigger pesa ~40kb gzipped y no aporta nada en un grid de productos. 
 - **Webhook firmado**: `/api/revalidate` verifica `x-revalidate-signature` con HMAC-SHA256 usando `REVALIDATE_SECRET`.
 - **CSP**: headers configurados en `next.config.ts` permiten solo Cloudinary, Stripe, GTM.
 
+## GraphQL types
+
+Types for every query/mutation are generated from the API schema by `graphql-codegen`. They live in `src/lib/api/generated/` and are committed.
+
+**When the API schema changes:**
+
+1. Make sure `../bienbravo-api` is checked out and has the updated `schema.generated.graphql` committed
+2. From this repo:
+   ```bash
+   npm run sync-schema   # copies API schema → ./schema.graphql
+   npm run codegen       # regenerates src/lib/api/generated/
+   ```
+3. Commit both the updated `schema.graphql` and the regenerated `src/lib/api/generated/` files together
+
+**When authoring a new query/mutation:**
+
+Use the `graphql()` function from `./generated` (or `@/lib/api/generated`), not the old `/* GraphQL */` template string:
+
+```ts
+import { graphql } from "./generated";
+
+export const MY_QUERY = graphql(`
+  query MyQuery($id: ID!) { ... }
+`);
+```
+
+Then pass it to `serverQuery`:
+```ts
+const data = await serverQuery(MY_QUERY, { id: "abc" }, { revalidate: 60, tags: ['something'] });
+// `data` is fully typed from the operation's selection set
+```
+
+Run `npm run codegen:watch` during dev to regenerate on save.
+
+**CI enforcement:** CI runs `npm run codegen` and fails if the committed `src/lib/api/generated/` differs from what codegen produces. If the CI "codegen drift" check fails on your PR, run `npm run codegen` locally and commit the result.
+
 ## Qué NO hacer
 
 - No volver a `output: 'export'` — rompería el storefront.
