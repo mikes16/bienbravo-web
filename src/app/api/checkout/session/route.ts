@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { serverQuery } from "@/lib/api/server";
+import { getVisitorIp } from "@/lib/api/client-ip";
 import {
   CREATE_ORDER_MUTATION,
   CREATE_ORDER_PAYMENT_INTENT_MUTATION,
@@ -29,23 +30,30 @@ export async function POST(req: Request) {
   }
 
   try {
-    const orderResult = await serverQuery(CREATE_ORDER_MUTATION, {
-      input: {
-        pickupLocationId: body.pickupLocationId,
-        source: "STOREFRONT",
-        items: body.items.map((i) => ({
-          productId: i.productId,
-          variantId: i.variantId,
-          qty: i.qty,
-        })),
+    const clientIp = await getVisitorIp();
+    const orderResult = await serverQuery(
+      CREATE_ORDER_MUTATION,
+      {
+        input: {
+          pickupLocationId: body.pickupLocationId,
+          source: "STOREFRONT",
+          items: body.items.map((i) => ({
+            productId: i.productId,
+            variantId: i.variantId,
+            qty: i.qty,
+          })),
+        },
       },
-    });
+      { clientIp },
+    );
 
     const order = orderResult.createOrder;
 
-    const piResult = await serverQuery(CREATE_ORDER_PAYMENT_INTENT_MUTATION, {
-      orderId: order.id,
-    });
+    const piResult = await serverQuery(
+      CREATE_ORDER_PAYMENT_INTENT_MUTATION,
+      { orderId: order.id },
+      { clientIp },
+    );
 
     return NextResponse.json({
       orderId: order.id,
