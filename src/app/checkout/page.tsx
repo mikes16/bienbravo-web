@@ -1,5 +1,5 @@
 import { serverQuery } from "@/lib/api/server";
-import { LOCATIONS_QUERY, type StoreLocation } from "@/lib/api/queries";
+import { LOCATIONS_QUERY } from "@/lib/api/queries";
 import { CheckoutFlow } from "@/components/checkout/CheckoutFlow";
 
 export const dynamic = "force-dynamic"; // PII (email/phone) lives here; don't cache
@@ -8,12 +8,11 @@ export const metadata = {
   title: "Checkout — BienBravo",
 };
 
-async function getLocations(): Promise<StoreLocation[]> {
-  const data = await serverQuery<{ locations: StoreLocation[] }>(
-    LOCATIONS_QUERY,
-    undefined,
-    { revalidate: 300, tags: ["locations"] },
-  );
+async function getLocations() {
+  const data = await serverQuery(LOCATIONS_QUERY, undefined, {
+    revalidate: 300,
+    tags: ["locations"],
+  });
   return data.locations.filter((l) => l.isActive);
 }
 

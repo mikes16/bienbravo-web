@@ -1,44 +1,8 @@
-// GraphQL query strings + response types for the storefront.
-// Kept as plain strings so the `fetch`-based server helper can submit them
-// without an Apollo runtime. Types are hand-maintained (no codegen yet).
+// GraphQL operations for the storefront. All types are inferred from the
+// generated TypedDocumentNode — do not add hand-written response types here.
+import { graphql } from "./generated";
 
-export type StoreProductVariant = {
-  id: string;
-  name: string;
-  priceCents: number;
-  compareAtPriceCents: number | null;
-  sku: string | null;
-};
-
-export type StoreProductImage = {
-  id: string;
-  url: string;
-  sortOrder: number;
-};
-
-export type StoreProduct = {
-  id: string;
-  handle: string | null;
-  name: string;
-  description: string | null;
-  imageUrl: string | null;
-  images: StoreProductImage[];
-  isActive: boolean;
-  status: "DRAFT" | "ACTIVE" | "ARCHIVED";
-  compareAtPriceCents: number | null;
-  requiresShipping: boolean;
-  locationIds: string[];
-  variants: StoreProductVariant[];
-};
-
-export type StoreLocation = {
-  id: string;
-  name: string;
-  slug: string;
-  isActive: boolean;
-};
-
-export const PRODUCTS_QUERY = /* GraphQL */ `
+export const PRODUCTS_QUERY = graphql(`
   query StoreProducts {
     products {
       id
@@ -65,9 +29,9 @@ export const PRODUCTS_QUERY = /* GraphQL */ `
       }
     }
   }
-`;
+`);
 
-export const LOCATIONS_QUERY = /* GraphQL */ `
+export const LOCATIONS_QUERY = graphql(`
   query StoreLocations {
     locations {
       id
@@ -76,9 +40,9 @@ export const LOCATIONS_QUERY = /* GraphQL */ `
       isActive
     }
   }
-`;
+`);
 
-export const CREATE_ORDER_MUTATION = /* GraphQL */ `
+export const CREATE_ORDER_MUTATION = graphql(`
   mutation StoreCreateOrder($input: CreateOrderInput!) {
     createOrder(input: $input) {
       id
@@ -87,9 +51,9 @@ export const CREATE_ORDER_MUTATION = /* GraphQL */ `
       fulfillmentStatus
     }
   }
-`;
+`);
 
-export const CREATE_ORDER_PAYMENT_INTENT_MUTATION = /* GraphQL */ `
+export const CREATE_ORDER_PAYMENT_INTENT_MUTATION = graphql(`
   mutation StoreCreateOrderPaymentIntent($orderId: ID!) {
     createOrderPaymentIntent(orderId: $orderId) {
       paymentIntentId
@@ -98,4 +62,4 @@ export const CREATE_ORDER_PAYMENT_INTENT_MUTATION = /* GraphQL */ `
       currency
     }
   }
-`;
+`);

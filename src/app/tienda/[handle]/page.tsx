@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { serverQuery } from "@/lib/api/server";
-import { PRODUCTS_QUERY, type StoreProduct } from "@/lib/api/queries";
+import { PRODUCTS_QUERY } from "@/lib/api/queries";
+import { ProductStatus, type StoreProductsQuery } from "@/lib/api/generated/graphql";
 import { formatMXN } from "@/lib/cart/format";
 import { AddToCartForm } from "@/components/tienda/AddToCartForm";
 
@@ -10,13 +11,14 @@ export const revalidate = 60;
 
 type PageProps = { params: Promise<{ handle: string }> };
 
+type StoreProduct = StoreProductsQuery["products"][number];
+
 async function getAllProducts(): Promise<StoreProduct[]> {
-  const data = await serverQuery<{ products: StoreProduct[] }>(
-    PRODUCTS_QUERY,
-    undefined,
-    { revalidate: 60, tags: ["products"] },
-  );
-  return data.products.filter((p) => p.isActive && p.status === "ACTIVE");
+  const data = await serverQuery(PRODUCTS_QUERY, undefined, {
+    revalidate: 60,
+    tags: ["products"],
+  });
+  return data.products.filter((p) => p.isActive && p.status === ProductStatus.Active);
 }
 
 async function findProduct(handle: string): Promise<StoreProduct | null> {
@@ -98,7 +100,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                   product={{
                     id: product.id,
                     name: product.name,
-                    handle: product.handle,
+                    handle: product.handle ?? null,
                     imageUrl: primaryImage ?? null,
                   }}
                   variants={product.variants}

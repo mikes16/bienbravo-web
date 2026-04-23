@@ -1,4 +1,6 @@
 import "server-only";
+import { print } from "graphql";
+import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 
 type GraphQLResponse<T> = {
   data?: T;
@@ -11,17 +13,17 @@ type QueryInit = {
 };
 
 /**
- * Server-only GraphQL fetch helper. Uses Next 16's native fetch cache so
- * callers can opt into ISR with `revalidate`/`tags` naturally:
+ * Server-only GraphQL fetch helper. Accepts a TypedDocumentNode so data and
+ * variables are inferred from the operation:
  *
- *   await serverQuery<T>(QUERY, variables, { revalidate: 60, tags: ['products'] })
+ *   const data = await serverQuery(PRODUCTS_QUERY, undefined, { revalidate: 60, tags: ['products'] })
  *
  * The `x-service-token` header is attached on every call; the API builds a
  * SERVICE viewer with read-only catalog permissions from it.
  */
-export async function serverQuery<TData>(
-  query: string,
-  variables?: Record<string, unknown>,
+export async function serverQuery<TData, TVars = Record<string, never>>(
+  doc: TypedDocumentNode<TData, TVars>,
+  variables?: TVars,
   init?: QueryInit,
 ): Promise<TData> {
   const uri = process.env.API_GRAPHQL_URL;
@@ -35,7 +37,7 @@ export async function serverQuery<TData>(
       "content-type": "application/json",
       "x-service-token": token,
     },
-    body: JSON.stringify({ query, variables }),
+    body: JSON.stringify({ query: print(doc), variables }),
     next:
       init?.revalidate !== undefined || init?.tags
         ? { revalidate: init.revalidate, tags: init.tags }

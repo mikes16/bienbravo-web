@@ -13,24 +13,6 @@ type CheckoutRequest = {
   buyer: { email?: string; phone?: string };
 };
 
-type CreateOrderResponse = {
-  createOrder: {
-    id: string;
-    totalCents: number;
-    status: string;
-    fulfillmentStatus: string;
-  };
-};
-
-type CreateOrderPaymentIntentResponse = {
-  createOrderPaymentIntent: {
-    paymentIntentId: string;
-    clientSecret: string;
-    amountCents: number;
-    currency: string;
-  };
-};
-
 export async function POST(req: Request) {
   let body: CheckoutRequest;
   try {
@@ -47,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const orderResult = await serverQuery<CreateOrderResponse>(CREATE_ORDER_MUTATION, {
+    const orderResult = await serverQuery(CREATE_ORDER_MUTATION, {
       input: {
         pickupLocationId: body.pickupLocationId,
         source: "STOREFRONT",
@@ -61,10 +43,9 @@ export async function POST(req: Request) {
 
     const order = orderResult.createOrder;
 
-    const piResult = await serverQuery<CreateOrderPaymentIntentResponse>(
-      CREATE_ORDER_PAYMENT_INTENT_MUTATION,
-      { orderId: order.id },
-    );
+    const piResult = await serverQuery(CREATE_ORDER_PAYMENT_INTENT_MUTATION, {
+      orderId: order.id,
+    });
 
     return NextResponse.json({
       orderId: order.id,
