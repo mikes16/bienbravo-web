@@ -10,6 +10,7 @@ type GraphQLResponse<T> = {
 type QueryInit = {
   revalidate?: number | false;
   tags?: string[];
+  clientIp?: string; // forwarded to API as x-bb-client-ip for rate-limiting
 };
 
 /**
@@ -31,12 +32,17 @@ export async function serverQuery<TData, TVars = Record<string, never>>(
   const token = process.env.API_SERVICE_TOKEN;
   if (!token) throw new Error("API_SERVICE_TOKEN is required");
 
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    "x-service-token": token,
+  };
+  if (init?.clientIp) {
+    headers["x-bb-client-ip"] = init.clientIp;
+  }
+
   const res = await fetch(uri, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-service-token": token,
-    },
+    headers,
     body: JSON.stringify({ query: print(doc), variables }),
     next:
       init?.revalidate !== undefined || init?.tags

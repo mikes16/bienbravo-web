@@ -1,4 +1,5 @@
 import { serverQuery } from "@/lib/api/server";
+import { getVisitorIp } from "@/lib/api/client-ip";
 import { LOCATIONS_QUERY } from "@/lib/api/queries";
 import { CheckoutFlow } from "@/components/checkout/CheckoutFlow";
 
@@ -8,16 +9,18 @@ export const metadata = {
   title: "Checkout — BienBravo",
 };
 
-async function getLocations() {
+async function getLocations(clientIp: string | undefined) {
   const data = await serverQuery(LOCATIONS_QUERY, undefined, {
     revalidate: 300,
     tags: ["locations"],
+    clientIp,
   });
   return data.locations.filter((l) => l.isActive);
 }
 
 export default async function CheckoutPage() {
-  const locations = await getLocations();
+  const clientIp = await getVisitorIp();
+  const locations = await getLocations(clientIp);
   return (
     <main className="min-h-screen bg-[var(--bb-bg)] text-[var(--bb-text)]">
       <div className="mx-auto max-w-3xl px-6 py-16">
