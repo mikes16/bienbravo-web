@@ -35,6 +35,11 @@ export async function serverQuery<TData, TVars = Record<string, never>>(
   const headers: Record<string, string> = {
     "content-type": "application/json",
     "x-service-token": token,
+    // Tags this app for the API's per-client cookie split. Today serverQuery
+    // is service-token-only (no cookies) so this is purely informational, but
+    // any future customer-session call from web should keep the same tag so
+    // the API reads/writes bb_session_web instead of stomping on staff cookies.
+    "x-bb-client": "web",
   };
   if (init?.clientIp) {
     headers["x-bb-client-ip"] = init.clientIp;
