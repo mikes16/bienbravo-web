@@ -134,6 +134,25 @@ export enum BookingPaymentMode {
   None = 'NONE'
 }
 
+export type BulkPriceResult = {
+  __typename?: 'BulkPriceResult';
+  skipped: Array<BulkSkipped>;
+  updated: Scalars['Int']['output'];
+  variantsUpdated: Scalars['Int']['output'];
+};
+
+export type BulkProductResult = {
+  __typename?: 'BulkProductResult';
+  skipped: Array<BulkSkipped>;
+  updated: Scalars['Int']['output'];
+};
+
+export type BulkSkipped = {
+  __typename?: 'BulkSkipped';
+  id: Scalars['String']['output'];
+  reason: Scalars['String']['output'];
+};
+
 export type CancelAppointmentByTokenResult = {
   __typename?: 'CancelAppointmentByTokenResult';
   ok: Scalars['Boolean']['output'];
@@ -166,6 +185,7 @@ export type CatalogCombo = {
   __typename?: 'CatalogCombo';
   commissionCents: Scalars['Int']['output'];
   description?: Maybe<Scalars['String']['output']>;
+  durationMinutes?: Maybe<Scalars['Int']['output']>;
   effectiveCategories: Array<CatalogCategory>;
   effectiveCategoryIds: Array<Scalars['ID']['output']>;
   extraCategoryIds: Array<Scalars['ID']['output']>;
@@ -273,6 +293,7 @@ export type CreateCatalogCategoryInput = {
 export type CreateCatalogComboInput = {
   commissionCents: Scalars['Int']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
+  durationMinutes?: InputMaybe<Scalars['Int']['input']>;
   extraCategoryIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   imagePublicId?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
@@ -339,7 +360,7 @@ export type CreatePosSaleInput = {
   customerId?: InputMaybe<Scalars['ID']['input']>;
   items: Array<PosSaleItemInput>;
   locationId: Scalars['ID']['input'];
-  paymentMethod?: InputMaybe<Scalars['String']['input']>;
+  payments: Array<PosPaymentInput>;
   registerSessionId?: InputMaybe<Scalars['ID']['input']>;
   staffUserId?: InputMaybe<Scalars['ID']['input']>;
   tipCents?: InputMaybe<Scalars['Int']['input']>;
@@ -356,6 +377,7 @@ export type CreateProductInput = {
   hsCode?: InputMaybe<Scalars['String']['input']>;
   imagePublicId?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
+  initialStock?: InputMaybe<Array<InitialStockInput>>;
   lengthMm?: InputMaybe<Scalars['Int']['input']>;
   locationIds: Array<Scalars['ID']['input']>;
   name: Scalars['String']['input'];
@@ -581,6 +603,12 @@ export type GroupBookingAppointmentInput = {
   startAt: Scalars['DateTime']['input'];
 };
 
+export type InitialStockInput = {
+  productVariantId?: InputMaybe<Scalars['ID']['input']>;
+  quantity: Scalars['Int']['input'];
+  stockLocationId: Scalars['ID']['input'];
+};
+
 export type InventoryAlertRow = {
   __typename?: 'InventoryAlertRow';
   lowStockThreshold?: Maybe<Scalars['Int']['output']>;
@@ -597,7 +625,57 @@ export type InventoryLevel = {
   id: Scalars['ID']['output'];
   product: Product;
   productId: Scalars['ID']['output'];
+  productVariant?: Maybe<ProductVariant>;
+  productVariantId?: Maybe<Scalars['ID']['output']>;
   quantity: Scalars['Int']['output'];
+  stockLocationId: Scalars['ID']['output'];
+};
+
+export type InventoryMatrixConnection = {
+  __typename?: 'InventoryMatrixConnection';
+  edges: Array<InventoryMatrixEdge>;
+  pageInfo: InventoryMatrixPageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type InventoryMatrixEdge = {
+  __typename?: 'InventoryMatrixEdge';
+  cursor: Scalars['String']['output'];
+  node: InventoryMatrixRow;
+};
+
+export type InventoryMatrixLevel = {
+  __typename?: 'InventoryMatrixLevel';
+  quantity: Scalars['Int']['output'];
+  stockLocationId: Scalars['ID']['output'];
+};
+
+export type InventoryMatrixPageInfo = {
+  __typename?: 'InventoryMatrixPageInfo';
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+};
+
+export type InventoryMatrixRow = {
+  __typename?: 'InventoryMatrixRow';
+  levels: Array<InventoryMatrixLevel>;
+  product: Product;
+  productId: Scalars['ID']['output'];
+  productVariantId?: Maybe<Scalars['ID']['output']>;
+  totalQuantity: Scalars['Int']['output'];
+  variant?: Maybe<ProductVariant>;
+};
+
+export type InventoryMovement = {
+  __typename?: 'InventoryMovement';
+  createdAt: Scalars['DateTime']['output'];
+  delta: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  productId: Scalars['ID']['output'];
+  productVariantId?: Maybe<Scalars['ID']['output']>;
+  reason?: Maybe<Scalars['String']['output']>;
+  stockLocationId: Scalars['ID']['output'];
+  type: Scalars['String']['output'];
 };
 
 export type LatenessExcuse = {
@@ -739,6 +817,9 @@ export type Mutation = {
   assignPermissionsToRole: Role;
   assignRoleToStaff: Scalars['Boolean']['output'];
   assignWalkIn: AssignWalkInResult;
+  bulkAdjustPrice: BulkPriceResult;
+  bulkAssignCategory: BulkProductResult;
+  bulkUpdateProductStatus: BulkProductResult;
   cancelAppointment: CancelAppointmentResult;
   cancelAppointmentByToken: CancelAppointmentByTokenResult;
   cancelOrder: Order;
@@ -793,9 +874,12 @@ export type Mutation = {
   deleteStaffServicePrice: Scalars['Boolean']['output'];
   deleteStaffVacation: Scalars['Boolean']['output'];
   dropWalkIn: Scalars['Boolean']['output'];
+  extendServiceTokenPrevious: ServiceTokenInfo;
   findOrCreateCustomer?: Maybe<Customer>;
+  findOrCreateMostradorCustomer: Customer;
   fulfillOrder: Order;
   inventoryAdjust: InventoryLevel;
+  inventorySet: InventoryLevel;
   inventoryTransfer: Scalars['Boolean']['output'];
   logout: Scalars['Boolean']['output'];
   noShow: Appointment;
@@ -803,6 +887,7 @@ export type Mutation = {
   publishBlogPost: BlogPost;
   recalcReportingMetrics: Scalars['Boolean']['output'];
   refundApprove: Scalars['Boolean']['output'];
+  refundReject: Scalars['Boolean']['output'];
   refundRequest: Scalars['String']['output'];
   removeProductImage: Product;
   reorderProductImages: Product;
@@ -813,6 +898,8 @@ export type Mutation = {
   rescheduleAppointment: RescheduleAppointmentResult;
   rescheduleAppointmentByToken: RescheduleAppointmentByTokenResult;
   resetLocationBusinessHours: Array<LocationBusinessHour>;
+  resetPosPinAttempts: Scalars['Boolean']['output'];
+  rotateServiceToken: RotateServiceTokenResult;
   runPayout: PayoutRun;
   setPosLocationPassword: Scalars['Boolean']['output'];
   setStaffPassword: Scalars['Boolean']['output'];
@@ -871,6 +958,25 @@ export type MutationAssignRoleToStaffArgs = {
 export type MutationAssignWalkInArgs = {
   staffUserId: Scalars['ID']['input'];
   walkInId: Scalars['ID']['input'];
+};
+
+
+export type MutationBulkAdjustPriceArgs = {
+  deltaCents?: InputMaybe<Scalars['Int']['input']>;
+  deltaPct?: InputMaybe<Scalars['Float']['input']>;
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+export type MutationBulkAssignCategoryArgs = {
+  categoryId: Scalars['ID']['input'];
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+export type MutationBulkUpdateProductStatusArgs = {
+  ids: Array<Scalars['ID']['input']>;
+  status: ProductStatus;
 };
 
 
@@ -1047,6 +1153,8 @@ export type MutationCreateWalkInArgs = {
   customerName?: InputMaybe<Scalars['String']['input']>;
   customerPhone?: InputMaybe<Scalars['String']['input']>;
   locationId: Scalars['ID']['input'];
+  requestedCatalogComboId?: InputMaybe<Scalars['ID']['input']>;
+  requestedServiceId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1148,6 +1256,11 @@ export type MutationDropWalkInArgs = {
 };
 
 
+export type MutationExtendServiceTokenPreviousArgs = {
+  additionalHours: Scalars['Int']['input'];
+};
+
+
 export type MutationFindOrCreateCustomerArgs = {
   email?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
@@ -1169,6 +1282,15 @@ export type MutationInventoryAdjustArgs = {
 };
 
 
+export type MutationInventorySetArgs = {
+  productId: Scalars['ID']['input'];
+  productVariantId?: InputMaybe<Scalars['ID']['input']>;
+  quantity: Scalars['Int']['input'];
+  reason?: InputMaybe<Scalars['String']['input']>;
+  stockLocationId: Scalars['ID']['input'];
+};
+
+
 export type MutationInventoryTransferArgs = {
   fromStockLocationId: Scalars['ID']['input'];
   productId: Scalars['ID']['input'];
@@ -1183,6 +1305,7 @@ export type MutationNoShowArgs = {
 
 
 export type MutationOpenRegisterSessionArgs = {
+  openingCashCents?: InputMaybe<Scalars['Int']['input']>;
   registerId: Scalars['ID']['input'];
 };
 
@@ -1199,6 +1322,12 @@ export type MutationRecalcReportingMetricsArgs = {
 
 
 export type MutationRefundApproveArgs = {
+  refundId: Scalars['ID']['input'];
+};
+
+
+export type MutationRefundRejectArgs = {
+  reason?: InputMaybe<Scalars['String']['input']>;
   refundId: Scalars['ID']['input'];
 };
 
@@ -1259,6 +1388,16 @@ export type MutationRescheduleAppointmentByTokenArgs = {
 
 export type MutationResetLocationBusinessHoursArgs = {
   locationId: Scalars['ID']['input'];
+};
+
+
+export type MutationResetPosPinAttemptsArgs = {
+  staffUserId: Scalars['ID']['input'];
+};
+
+
+export type MutationRotateServiceTokenArgs = {
+  input: RotateServiceTokenInput;
 };
 
 
@@ -1482,13 +1621,37 @@ export type OrderItem = {
   variantId?: Maybe<Scalars['ID']['output']>;
 };
 
+export type PosPaymentInput = {
+  amountCents: Scalars['Int']['input'];
+  provider: PaymentProvider;
+};
+
 export type PosSaleItemInput = {
   catalogComboId?: InputMaybe<Scalars['ID']['input']>;
   productId?: InputMaybe<Scalars['ID']['input']>;
   qty: Scalars['Int']['input'];
   serviceId?: InputMaybe<Scalars['ID']['input']>;
+  staffUserId?: InputMaybe<Scalars['ID']['input']>;
   unitPriceCents: Scalars['Int']['input'];
 };
+
+export type PageInfo = {
+  __typename?: 'PageInfo';
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  hasPreviousPage: Scalars['Boolean']['output'];
+  startCursor?: Maybe<Scalars['String']['output']>;
+};
+
+export enum PaymentProvider {
+  CardTerminal = 'CARD_TERMINAL',
+  Cash = 'CASH',
+  Mercadopago = 'MERCADOPAGO',
+  Other = 'OTHER',
+  Paypal = 'PAYPAL',
+  Stripe = 'STRIPE',
+  Transfer = 'TRANSFER'
+}
 
 export type PayoutRun = {
   __typename?: 'PayoutRun';
@@ -1508,10 +1671,51 @@ export type PayoutRunEntry = {
   staffUserId: Scalars['ID']['output'];
 };
 
+export type PayrollPreviewRow = {
+  __typename?: 'PayrollPreviewRow';
+  commissionCents: Scalars['Int']['output'];
+  fullName: Scalars['String']['output'];
+  revenueCents: Scalars['Int']['output'];
+  staffUserId: Scalars['ID']['output'];
+};
+
+export type PosAvailableBarber = {
+  __typename?: 'PosAvailableBarber';
+  fullName: Scalars['String']['output'];
+  hasClockedIn: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  isOccupied: Scalars['Boolean']['output'];
+  photoUrl?: Maybe<Scalars['String']['output']>;
+};
+
+export type PosCajaStatusHome = {
+  __typename?: 'PosCajaStatusHome';
+  accumulatedCents?: Maybe<Scalars['Int']['output']>;
+  isOpen: Scalars['Boolean']['output'];
+  openedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+export type PosPinLockoutStatus = {
+  __typename?: 'PosPinLockoutStatus';
+  /** Remaining attempts before next lockout. 8 if not in failure state. */
+  attemptsRemaining: Scalars['Int']['output'];
+  /** Null if not currently locked. */
+  lockedUntil?: Maybe<Scalars['DateTime']['output']>;
+};
+
 export type PosPublicLocation = {
   __typename?: 'PosPublicLocation';
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
+};
+
+export type PosRevenueSummary = {
+  __typename?: 'PosRevenueSummary';
+  cardCents: Scalars['Int']['output'];
+  cashCents: Scalars['Int']['output'];
+  salesCount: Scalars['Int']['output'];
+  totalCents: Scalars['Int']['output'];
+  transferCents: Scalars['Int']['output'];
 };
 
 export type Product = {
@@ -1549,6 +1753,19 @@ export type Product = {
   widthMm?: Maybe<Scalars['Int']['output']>;
 };
 
+export type ProductConnection = {
+  __typename?: 'ProductConnection';
+  edges: Array<ProductEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type ProductEdge = {
+  __typename?: 'ProductEdge';
+  cursor: Scalars['String']['output'];
+  node: Product;
+};
+
 export type ProductImage = {
   __typename?: 'ProductImage';
   id: Scalars['ID']['output'];
@@ -1577,8 +1794,18 @@ export type ProductVariant = {
   sku?: Maybe<Scalars['String']['output']>;
 };
 
+export enum ProductsSort {
+  NameAsc = 'NAME_ASC',
+  NameDesc = 'NAME_DESC',
+  PriceAsc = 'PRICE_ASC',
+  PriceDesc = 'PRICE_DESC',
+  UpdatedAsc = 'UPDATED_ASC',
+  UpdatedDesc = 'UPDATED_DESC'
+}
+
 export type Query = {
   __typename?: 'Query';
+  activeServiceTokens: Array<ServiceTokenInfo>;
   alertsFeed: Array<DashboardAlert>;
   appointment?: Maybe<Appointment>;
   appointments: Array<Appointment>;
@@ -1595,10 +1822,13 @@ export type Query = {
   customer?: Maybe<Customer>;
   customerAppointments: Array<Appointment>;
   customers: Array<Customer>;
+  customersCount: Scalars['Int']['output'];
   dailyLocationMetrics: Array<DailyLocationMetrics>;
   dailyStaffMetrics: Array<DailyStaffMetrics>;
   dashboardSummary: DashboardSummary;
   inventoryLevels: Array<InventoryLevel>;
+  inventoryMatrix: InventoryMatrixConnection;
+  inventoryMovements: Array<InventoryMovement>;
   latenessExcuses: Array<LatenessExcuse>;
   latenessOverrides: Array<LatenessOverride>;
   latenessRule?: Maybe<LatenessRule>;
@@ -1619,13 +1849,21 @@ export type Query = {
   orders: Array<Order>;
   payoutRun?: Maybe<PayoutRun>;
   payoutRuns: Array<PayoutRun>;
+  payrollPreview: Array<PayrollPreviewRow>;
   permissions: Array<Scalars['String']['output']>;
+  posAvailableBarbers: Array<PosAvailableBarber>;
+  posCajaStatusHome: PosCajaStatusHome;
   posInventoryLevels: Array<InventoryLevel>;
+  posPinLockoutStatus: PosPinLockoutStatus;
   posPublicLocations: Array<PosPublicLocation>;
+  posRevenueSummary: PosRevenueSummary;
   product?: Maybe<Product>;
   products: Array<Product>;
+  productsPaged: ProductConnection;
   realtimeBranchStatus: Array<RealtimeBranchStatusRow>;
+  refunds: RefundConnection;
   registerSession?: Maybe<RegisterSession>;
+  registerSessions: RegisterSessionConnection;
   registers: Array<Register>;
   reportByDayOfWeek: Array<ReportDayOfWeekRow>;
   reportCompareLocations: Array<ReportCompareLocationRow>;
@@ -1652,6 +1890,7 @@ export type Query = {
   staffLocationsWithSchedules: Array<StaffLocationScheduleSummary>;
   staffMemberships: Array<StaffMembership>;
   staffProductRevenueToday: Scalars['Int']['output'];
+  staffRegisterSessions: Array<RegisterSession>;
   staffRevenueToday: Scalars['Int']['output'];
   staffRoleAssignments: Array<StaffRoleAssignmentRow>;
   staffServiceRevenueToday: Scalars['Int']['output'];
@@ -1749,6 +1988,11 @@ export type QueryCustomersArgs = {
 };
 
 
+export type QueryCustomersCountArgs = {
+  query?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QueryDailyLocationMetricsArgs = {
   dateFrom: Scalars['String']['input'];
   dateTo: Scalars['String']['input'];
@@ -1773,6 +2017,21 @@ export type QueryInventoryLevelsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   stockLocationId: Scalars['ID']['input'];
+};
+
+
+export type QueryInventoryMatrixArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  stockLocationIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+export type QueryInventoryMovementsArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  productId: Scalars['ID']['input'];
+  productVariantId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -1881,8 +2140,37 @@ export type QueryPayoutRunsArgs = {
 };
 
 
+export type QueryPayrollPreviewArgs = {
+  locationIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  periodEnd: Scalars['DateTime']['input'];
+  periodStart: Scalars['DateTime']['input'];
+};
+
+
+export type QueryPosAvailableBarbersArgs = {
+  locationId: Scalars['ID']['input'];
+};
+
+
+export type QueryPosCajaStatusHomeArgs = {
+  locationId: Scalars['ID']['input'];
+};
+
+
 export type QueryPosInventoryLevelsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  locationId: Scalars['ID']['input'];
+};
+
+
+export type QueryPosPinLockoutStatusArgs = {
+  email: Scalars['String']['input'];
+};
+
+
+export type QueryPosRevenueSummaryArgs = {
+  dateFrom: Scalars['String']['input'];
+  dateTo: Scalars['String']['input'];
   locationId: Scalars['ID']['input'];
 };
 
@@ -1897,14 +2185,42 @@ export type QueryProductsArgs = {
 };
 
 
+export type QueryProductsPagedArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  categoryId?: InputMaybe<Scalars['String']['input']>;
+  first?: Scalars['Int']['input'];
+  search?: InputMaybe<Scalars['String']['input']>;
+  sort?: ProductsSort;
+  status?: InputMaybe<ProductStatus>;
+};
+
+
 export type QueryRealtimeBranchStatusArgs = {
   filters: DashboardFiltersInput;
   locationId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
+export type QueryRefundsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: Scalars['Int']['input'];
+  locationId: Scalars['ID']['input'];
+  status?: InputMaybe<RefundStatus>;
+};
+
+
 export type QueryRegisterSessionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryRegisterSessionsArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  dateFrom: Scalars['String']['input'];
+  dateTo: Scalars['String']['input'];
+  first?: Scalars['Int']['input'];
+  locationId: Scalars['ID']['input'];
+  status?: InputMaybe<RegisterSessionStatus>;
 };
 
 
@@ -2059,6 +2375,14 @@ export type QueryStaffProductRevenueTodayArgs = {
 };
 
 
+export type QueryStaffRegisterSessionsArgs = {
+  dateFrom?: InputMaybe<Scalars['String']['input']>;
+  dateTo?: InputMaybe<Scalars['String']['input']>;
+  first?: Scalars['Int']['input'];
+  staffUserId: Scalars['ID']['input'];
+};
+
+
 export type QueryStaffRevenueTodayArgs = {
   date: Scalars['String']['input'];
   locationId: Scalars['ID']['input'];
@@ -2130,6 +2454,40 @@ export type RealtimeBranchStatusRow = {
   waitingCount: Scalars['Int']['output'];
 };
 
+export type Refund = {
+  __typename?: 'Refund';
+  amountCents: Scalars['Int']['output'];
+  approvedAt?: Maybe<Scalars['DateTime']['output']>;
+  approvedByStaffUserId?: Maybe<Scalars['ID']['output']>;
+  id: Scalars['ID']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
+  requestedAt: Scalars['DateTime']['output'];
+  requestedByStaffUserId?: Maybe<Scalars['ID']['output']>;
+  sale: Sale;
+  saleId: Scalars['ID']['output'];
+  status: RefundStatus;
+};
+
+export type RefundConnection = {
+  __typename?: 'RefundConnection';
+  edges: Array<RefundEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type RefundEdge = {
+  __typename?: 'RefundEdge';
+  cursor: Scalars['String']['output'];
+  node: Refund;
+};
+
+export enum RefundStatus {
+  Approved = 'APPROVED',
+  Completed = 'COMPLETED',
+  Rejected = 'REJECTED',
+  Requested = 'REQUESTED'
+}
+
 export type Register = {
   __typename?: 'Register';
   id: Scalars['ID']['output'];
@@ -2149,8 +2507,23 @@ export type RegisterSession = {
   expectedCashCents: Scalars['Int']['output'];
   expectedTransferCents: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
+  locationName?: Maybe<Scalars['String']['output']>;
   openedAt: Scalars['DateTime']['output'];
+  openingCashCents: Scalars['Int']['output'];
   status: RegisterSessionStatus;
+};
+
+export type RegisterSessionConnection = {
+  __typename?: 'RegisterSessionConnection';
+  edges: Array<RegisterSessionEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type RegisterSessionEdge = {
+  __typename?: 'RegisterSessionEdge';
+  cursor: Scalars['String']['output'];
+  node: RegisterSession;
 };
 
 export enum RegisterSessionStatus {
@@ -2338,12 +2711,27 @@ export type Role = {
   permissionKeys: Array<Scalars['String']['output']>;
 };
 
+export type RotateServiceTokenInput = {
+  /** TTL for the outgoing PREVIOUS slot, in hours. Default 168 (7 days). Range: 1–720. */
+  previousTtlHours?: InputMaybe<Scalars['Int']['input']>;
+  reason?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type RotateServiceTokenResult = {
+  __typename?: 'RotateServiceTokenResult';
+  currentToken: ServiceTokenInfo;
+  plaintext: Scalars['String']['output'];
+  previousRetireAt?: Maybe<Scalars['DateTime']['output']>;
+  previousToken?: Maybe<ServiceTokenInfo>;
+};
+
 export type Sale = {
   __typename?: 'Sale';
   appointmentId?: Maybe<Scalars['ID']['output']>;
   createdAt: Scalars['DateTime']['output'];
   customer?: Maybe<Customer>;
   id: Scalars['ID']['output'];
+  items: Array<SaleItem>;
   paidTotalCents: Scalars['Int']['output'];
   paymentStatus: SalePaymentStatus;
   source: Scalars['String']['output'];
@@ -2353,6 +2741,27 @@ export type Sale = {
   totalCents: Scalars['Int']['output'];
   walkInId?: Maybe<Scalars['ID']['output']>;
 };
+
+export type SaleItem = {
+  __typename?: 'SaleItem';
+  catalogComboId?: Maybe<Scalars['ID']['output']>;
+  id: Scalars['ID']['output'];
+  itemType: SaleItemType;
+  productId?: Maybe<Scalars['ID']['output']>;
+  qty: Scalars['Int']['output'];
+  serviceId?: Maybe<Scalars['ID']['output']>;
+  staffUser?: Maybe<StaffUser>;
+  staffUserId?: Maybe<Scalars['ID']['output']>;
+  taxAmountCents: Scalars['Int']['output'];
+  totalCents: Scalars['Int']['output'];
+  unitPriceCents: Scalars['Int']['output'];
+};
+
+export enum SaleItemType {
+  Product = 'PRODUCT',
+  Service = 'SERVICE',
+  Tip = 'TIP'
+}
 
 export enum SalePaymentStatus {
   Paid = 'PAID',
@@ -2422,8 +2831,20 @@ export type ServiceLocation = {
   extraServiceIds: Array<Scalars['ID']['output']>;
   isActive: Scalars['Boolean']['output'];
   locationId: Scalars['ID']['output'];
+  penaltyCommissionCentsOverride?: Maybe<Scalars['Int']['output']>;
   priceCentsOverride?: Maybe<Scalars['Int']['output']>;
   serviceId: Scalars['ID']['output'];
+};
+
+export type ServiceTokenInfo = {
+  __typename?: 'ServiceTokenInfo';
+  createdAt: Scalars['DateTime']['output'];
+  createdBy?: Maybe<Scalars['ID']['output']>;
+  id: Scalars['ID']['output'];
+  lastUsedAt?: Maybe<Scalars['DateTime']['output']>;
+  promotedAt?: Maybe<Scalars['DateTime']['output']>;
+  retireAt?: Maybe<Scalars['DateTime']['output']>;
+  slot: TokenSlot;
 };
 
 export type ShiftBlock = {
@@ -2529,6 +2950,8 @@ export type StaffRoleAssignmentRow = {
 export type StaffServicePrice = {
   __typename?: 'StaffServicePrice';
   commissionCentsOverride?: Maybe<Scalars['Int']['output']>;
+  durationMinOverride?: Maybe<Scalars['Int']['output']>;
+  isExcluded: Scalars['Boolean']['output'];
   priceCents: Scalars['Int']['output'];
   serviceId: Scalars['ID']['output'];
   staffUserId: Scalars['ID']['output'];
@@ -2544,6 +2967,8 @@ export type StaffUser = {
   phone?: Maybe<Scalars['String']['output']>;
   photoPublicId?: Maybe<Scalars['String']['output']>;
   photoUrl?: Maybe<Scalars['String']['output']>;
+  pinAttempts: Scalars['Int']['output'];
+  pinLockedUntil?: Maybe<Scalars['DateTime']['output']>;
 };
 
 export type StaffVacation = {
@@ -2593,6 +3018,11 @@ export enum TimeClockEventType {
   ClockOut = 'CLOCK_OUT'
 }
 
+export enum TokenSlot {
+  Current = 'CURRENT',
+  Previous = 'PREVIOUS'
+}
+
 export type UpdateBlogPostInput = {
   contentJson?: InputMaybe<Scalars['JSON']['input']>;
   slug?: InputMaybe<Scalars['String']['input']>;
@@ -2614,6 +3044,7 @@ export type UpdateCatalogCategoryInput = {
 export type UpdateCatalogComboInput = {
   commissionCents?: InputMaybe<Scalars['Int']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
+  durationMinutes?: InputMaybe<Scalars['Int']['input']>;
   extraCategoryIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   imagePublicId?: InputMaybe<Scalars['String']['input']>;
   imageUrl?: InputMaybe<Scalars['String']['input']>;
@@ -2789,6 +3220,7 @@ export type UpsertServiceLocationInput = {
   extraServiceIds?: InputMaybe<Array<Scalars['ID']['input']>>;
   isActive?: InputMaybe<Scalars['Boolean']['input']>;
   locationId: Scalars['ID']['input'];
+  penaltyCommissionCentsOverride?: InputMaybe<Scalars['Int']['input']>;
   priceCentsOverride?: InputMaybe<Scalars['Int']['input']>;
   serviceId: Scalars['ID']['input'];
 };
@@ -2812,6 +3244,8 @@ export type UpsertShiftTemplatesForWeekInput = {
 
 export type UpsertStaffServicePriceInput = {
   commissionCentsOverride?: InputMaybe<Scalars['Int']['input']>;
+  durationMinOverride?: InputMaybe<Scalars['Int']['input']>;
+  isExcluded?: InputMaybe<Scalars['Boolean']['input']>;
   priceCents: Scalars['Int']['input'];
   serviceId: Scalars['ID']['input'];
   staffUserId: Scalars['ID']['input'];
@@ -2847,6 +3281,10 @@ export type WalkIn = {
   customerName?: Maybe<Scalars['String']['output']>;
   customerPhone?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  requestedCatalogCombo?: Maybe<CatalogCombo>;
+  requestedCatalogComboId?: Maybe<Scalars['ID']['output']>;
+  requestedService?: Maybe<Service>;
+  requestedServiceId?: Maybe<Scalars['ID']['output']>;
   status: WalkInStatus;
 };
 
